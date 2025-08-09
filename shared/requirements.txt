@@ -1,0 +1,9 @@
+# Shared Python dependencies for Lucidity AI backend and SDKs
+fastapi
+uvicorn
+requests
+langchain
+redis
+weaviate-client
+pinecone-client
+python-dotenv
