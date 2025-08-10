@@ -6,8 +6,8 @@ import chromadb
 from chromadb.config import Settings
 import uuid
 
-from ..config import settings
-from ..models.schemas import RAGQuery, RAGResponse, SearchResult, SearchSource
+from config import settings
+from models.schemas import RAGQuery, RAGResponse, SearchResult, SearchSource
 from .search_service import SearchService
 from .llm_service import LLMService
 
@@ -112,7 +112,7 @@ class RAGService:
         """Search web and index results for future use"""
         try:
             # Search the web
-            from ..models.schemas import SearchQuery
+            from models.schemas import SearchQuery
             search_query = SearchQuery(
                 query=query,
                 sources=[SearchSource.WEB, SearchSource.BING],
@@ -210,7 +210,7 @@ Instructions:
 Answer:"""
 
         # Generate response using LLM
-        from ..models.schemas import GenerationRequest
+        from models.schemas import GenerationRequest
         generation_request = GenerationRequest(
             prompt=prompt,
             model=model,

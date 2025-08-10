@@ -6,8 +6,8 @@ import redis
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
-from ..config import settings
-from ..models.schemas import MemoryEntry, MemoryQuery, MemoryResponse
+from config import settings
+from models.schemas import MemoryEntry, MemoryQuery, MemoryResponse
 
 class MemoryService:
     def __init__(self):

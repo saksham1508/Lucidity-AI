@@ -7,8 +7,8 @@ import sympy as sp
 from sympy import symbols, solve, simplify, expand, factor
 import numpy as np
 
-from ..config import settings
-from ..models.schemas import ReasoningRequest, ReasoningResponse, ReasoningStep, GenerationRequest
+from config import settings
+from models.schemas import ReasoningRequest, ReasoningResponse, ReasoningStep, GenerationRequest
 from .llm_service import LLMService
 
 class ReasoningService:

@@ -2,21 +2,19 @@
 from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-import asyncio
 from datetime import datetime
-from typing import Dict, Any, List
 
-from .config import settings
-from .models.schemas import (
+from config import settings
+from models.schemas import (
     SearchQuery, SearchResponse, RAGQuery, RAGResponse, GenerationRequest, GenerationResponse,
     MemoryEntry, MemoryQuery, MemoryResponse, ReasoningRequest, ReasoningResponse,
     ChatRequest, ChatResponse, ChatMessage, PersonalityType, ErrorResponse
 )
-from .services.search_service import SearchService
-from .services.rag_service import RAGService
-from .services.llm_service import LLMService
-from .services.memory_service import MemoryService
-from .services.reasoning_service import ReasoningService
+from services.search_service import SearchService
+from services.rag_service import RAGService
+from services.llm_service import LLMService
+from services.memory_service import MemoryService
+from services.reasoning_service import ReasoningService
 
 # Initialize services
 search_service = SearchService()
@@ -39,7 +37,7 @@ chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
 app = FastAPI(
     title="Lucidity AI Backend", 
-    description="Next-generation AI agent platform that surpasses Perplexity AI",
+    description="Next-generation AI agent platform",
     version="1.0.0"
 )
 

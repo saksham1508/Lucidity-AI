@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 from duckduckgo_search import DDGS
 from datetime import datetime
 
-from ..config import settings
-from ..models.schemas import SearchQuery, SearchResult, SearchResponse, SearchSource
+from config import settings
+from models.schemas import SearchQuery, SearchResult, SearchResponse, SearchSource
 
 class SearchService:
     def __init__(self):

@@ -5,8 +5,8 @@ import anthropic
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import torch
 
-from ..config import settings
-from ..models.schemas import GenerationRequest, GenerationResponse, ModelProvider
+from config import settings
+from models.schemas import GenerationRequest, GenerationResponse, ModelProvider
 
 class LLMService:
     def __init__(self):
