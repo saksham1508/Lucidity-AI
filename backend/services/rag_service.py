@@ -19,16 +19,13 @@ class RAGService:
         # Initialize embedding model
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         
-        # Initialize ChromaDB
-        self.chroma_client = chromadb.Client(Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory="./chroma_db"
-        ))
-        
+        # Initialize ChromaDB using the new client API (no deprecated Settings)
+        self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
+
         # Create or get collection
         try:
             self.collection = self.chroma_client.get_collection("lucidity_knowledge")
-        except:
+        except Exception:
             self.collection = self.chroma_client.create_collection(
                 name="lucidity_knowledge",
                 metadata={"hnsw:space": "cosine"}

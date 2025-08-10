@@ -8,7 +8,8 @@ from config import settings
 from models.schemas import (
     SearchQuery, SearchResponse, RAGQuery, RAGResponse, GenerationRequest, GenerationResponse,
     MemoryEntry, MemoryQuery, MemoryResponse, ReasoningRequest, ReasoningResponse,
-    ChatRequest, ChatResponse, ChatMessage, PersonalityType, ErrorResponse
+    ChatRequest, ChatResponse, ChatMessage, PersonalityType, ErrorResponse,
+    MultimodalRequest, CollaborationRequest
 )
 from services.search_service import SearchService
 from services.rag_service import RAGService
@@ -83,7 +84,6 @@ async def health_check():
         }
     }
 
-# --- Search: Multi-source, citation-backed ---
 @search_router.post("", response_model=SearchResponse)
 async def search(query: SearchQuery):
     """Multi-source search with citation triangulation"""
@@ -317,7 +317,7 @@ async def chat_message(request: ChatRequest, background_tasks: BackgroundTasks):
 
 # --- Multimodal: Text, image, audio, video ---
 @multimodal_router.post("/analyze")
-async def multimodal_analyze(file_type: str):
+async def multimodal_analyze(request: MultimodalRequest):
     """Analyze multimodal content"""
     # TODO: Implement multimodal analysis with Whisper, BLIP, etc.
     return {"result": None, "todo": "Implement multimodal analysis."}
@@ -348,7 +348,7 @@ async def get_profile(user_id: str):
 
 # --- Collab: Collaborative mode endpoints ---
 @collab_router.post("/edit")
-async def collab_edit(document_id: str, content: str):
+async def collab_edit(request: CollaborationRequest):
     """Collaborative editing"""
     # TODO: Implement collaborative editing
     return {"result": None, "todo": "Implement collaborative mode."}
