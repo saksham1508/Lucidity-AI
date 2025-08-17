@@ -2,8 +2,11 @@ import time
 from typing import List, Dict, Any, Optional, AsyncGenerator
 import openai
 import anthropic
+import google.generativeai as genai
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import torch
+import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from config import settings
 from models.schemas import GenerationRequest, GenerationResponse, ModelProvider
@@ -12,6 +15,7 @@ class LLMService:
     def __init__(self):
         self.openai_client = None
         self.anthropic_client = None
+        self.google_client = None
         self.local_models = {}
         
         # Initialize clients
@@ -20,6 +24,10 @@ class LLMService:
             
         if settings.anthropic_api_key:
             self.anthropic_client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+            
+        if settings.google_api_key:
+            genai.configure(api_key=settings.google_api_key)
+            self.google_client = genai
     
     async def generate(self, request: GenerationRequest) -> GenerationResponse:
         """Generate text using the specified model"""
@@ -33,6 +41,8 @@ class LLMService:
                 response = await self._generate_openai(request)
             elif provider == ModelProvider.ANTHROPIC:
                 response = await self._generate_anthropic(request)
+            elif provider == ModelProvider.GOOGLE:
+                response = await self._generate_google(request)
             elif provider == ModelProvider.LOCAL:
                 response = await self._generate_local(request)
             else:
@@ -60,6 +70,9 @@ class LLMService:
                 yield chunk
         elif provider == ModelProvider.ANTHROPIC:
             async for chunk in self._generate_anthropic_stream(request):
+                yield chunk
+        elif provider == ModelProvider.GOOGLE:
+            async for chunk in self._generate_google_stream(request):
                 yield chunk
         else:
             # For non-streaming models, yield the complete response
@@ -150,6 +163,82 @@ class LLMService:
         except Exception as e:
             raise Exception(f"Anthropic streaming failed: {str(e)}")
     
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    async def _generate_google(self, request: GenerationRequest) -> Dict[str, Any]:
+        """Generate using Google Gemini models"""
+        if not self.google_client:
+            raise ValueError("Google API key not configured")
+        
+        try:
+            # Map model names to Google model IDs
+            model_mapping = {
+                "gemini-pro": "gemini-pro",
+                "gemini-pro-vision": "gemini-pro-vision",
+                "gemini-1.5-pro": "gemini-1.5-pro",
+                "gemini-1.5-flash": "gemini-1.5-flash"
+            }
+            
+            model_id = model_mapping.get(request.model, "gemini-pro")
+            model = self.google_client.GenerativeModel(model_id)
+            
+            # Configure generation parameters
+            generation_config = genai.types.GenerationConfig(
+                temperature=request.temperature,
+                max_output_tokens=request.max_tokens,
+            )
+            
+            # Generate response
+            response = await asyncio.to_thread(
+                model.generate_content,
+                request.prompt,
+                generation_config=generation_config
+            )
+            
+            return {
+                "content": response.text,
+                "tokens_used": response.usage_metadata.total_token_count if hasattr(response, 'usage_metadata') else 0,
+                "finish_reason": "stop"
+            }
+            
+        except Exception as e:
+            raise Exception(f"Google generation failed: {str(e)}")
+    
+    async def _generate_google_stream(self, request: GenerationRequest) -> AsyncGenerator[str, None]:
+        """Stream generation using Google Gemini models"""
+        if not self.google_client:
+            raise ValueError("Google API key not configured")
+        
+        try:
+            model_mapping = {
+                "gemini-pro": "gemini-pro",
+                "gemini-pro-vision": "gemini-pro-vision",
+                "gemini-1.5-pro": "gemini-1.5-pro",
+                "gemini-1.5-flash": "gemini-1.5-flash"
+            }
+            
+            model_id = model_mapping.get(request.model, "gemini-pro")
+            model = self.google_client.GenerativeModel(model_id)
+            
+            generation_config = genai.types.GenerationConfig(
+                temperature=request.temperature,
+                max_output_tokens=request.max_tokens,
+            )
+            
+            # Generate streaming response
+            response = await asyncio.to_thread(
+                model.generate_content,
+                request.prompt,
+                generation_config=generation_config,
+                stream=True
+            )
+            
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+                    
+        except Exception as e:
+            raise Exception(f"Google streaming failed: {str(e)}")
+    
     async def _generate_local(self, request: GenerationRequest) -> Dict[str, Any]:
         """Generate using local models"""
         model_name = request.model
@@ -230,6 +319,8 @@ class LLMService:
             return ModelProvider.OPENAI
         elif model.startswith("claude-"):
             return ModelProvider.ANTHROPIC
+        elif model.startswith("gemini-"):
+            return ModelProvider.GOOGLE
         elif model in ["mixtral-8x7b", "llama-3-8b", "phi-3", "gemma-7b"]:
             return ModelProvider.LOCAL
         else:
@@ -251,6 +342,12 @@ class LLMService:
                 "claude-3-sonnet-20240229",
                 "claude-3-haiku-20240307"
             ] if self.anthropic_client else [],
+            "google": [
+                "gemini-pro",
+                "gemini-pro-vision",
+                "gemini-1.5-pro",
+                "gemini-1.5-flash"
+            ] if self.google_client else [],
             "local": [
                 "mixtral-8x7b",
                 "llama-3-8b",
@@ -287,6 +384,10 @@ class LLMService:
             "claude-3-opus-20240229": 200000,
             "claude-3-sonnet-20240229": 200000,
             "claude-3-haiku-20240307": 200000,
+            "gemini-pro": 32768,
+            "gemini-pro-vision": 32768,
+            "gemini-1.5-pro": 2000000,
+            "gemini-1.5-flash": 1000000,
             "mixtral-8x7b": 32768,
             "llama-3-8b": 8192,
             "phi-3": 4096,
@@ -306,6 +407,10 @@ class LLMService:
             "claude-3-opus-20240229": 0.015,
             "claude-3-sonnet-20240229": 0.003,
             "claude-3-haiku-20240307": 0.00025,
+            "gemini-pro": 0.0005,
+            "gemini-pro-vision": 0.0025,
+            "gemini-1.5-pro": 0.0035,
+            "gemini-1.5-flash": 0.00035,
             # Local models are free
             "mixtral-8x7b": 0.0,
             "llama-3-8b": 0.0,

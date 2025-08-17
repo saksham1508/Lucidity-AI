@@ -14,6 +14,7 @@ class PersonalityType(str, Enum):
 class ModelProvider(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
+    GOOGLE = "google"
     LOCAL = "local"
     HUGGINGFACE = "huggingface"
 
@@ -22,6 +23,14 @@ class SearchSource(str, Enum):
     ACADEMIC = "academic"
     CUSTOM = "custom"
     BING = "bing"
+    GOOGLE = "google"
+    ARXIV = "arxiv"
+    PUBMED = "pubmed"
+    SCHOLAR = "scholar"
+    NEWS = "news"
+    IMAGES = "images"
+    VIDEOS = "videos"
+    REALTIME = "realtime"
 
 # Search Models
 class SearchQuery(BaseModel):
@@ -192,6 +201,128 @@ class ChatResponse(BaseModel):
     confidence_score: float
     response_time: float
     model_used: str
+
+# Advanced Features Models
+class CodeExecutionRequest(BaseModel):
+    code: str = Field(..., description="Code to execute")
+    language: str = Field(default="python", description="Programming language")
+    timeout: int = Field(default=30, description="Execution timeout in seconds")
+    environment: str = Field(default="sandbox", description="Execution environment")
+
+class CodeExecutionResponse(BaseModel):
+    output: str
+    error: Optional[str] = None
+    execution_time: float
+    language: str
+    success: bool
+
+class WebBrowsingRequest(BaseModel):
+    url: str = Field(..., description="URL to browse")
+    action: str = Field(default="read", description="Action: read, screenshot, interact")
+    extract_type: str = Field(default="text", description="What to extract: text, links, images, all")
+    wait_time: int = Field(default=5, description="Wait time for page load")
+
+class WebBrowsingResponse(BaseModel):
+    content: str
+    url: str
+    title: str
+    links: List[str] = []
+    images: List[str] = []
+    metadata: Dict[str, Any] = {}
+    screenshot_url: Optional[str] = None
+
+class FileAnalysisRequest(BaseModel):
+    file_data: Optional[str] = Field(None, description="Base64 encoded file data")
+    file_url: Optional[str] = Field(None, description="URL to the file")
+    file_type: str = Field(..., description="File type: pdf, docx, xlsx, csv, txt, etc.")
+    analysis_type: str = Field(default="summary", description="Analysis type: summary, extract, translate, etc.")
+
+class FileAnalysisResponse(BaseModel):
+    content: str
+    file_type: str
+    analysis_type: str
+    metadata: Dict[str, Any] = {}
+    extracted_text: Optional[str] = None
+    summary: Optional[str] = None
+    key_points: List[str] = []
+
+class VoiceRequest(BaseModel):
+    audio_data: Optional[str] = Field(None, description="Base64 encoded audio data")
+    audio_url: Optional[str] = Field(None, description="URL to audio file")
+    language: str = Field(default="en", description="Audio language")
+    task: str = Field(default="transcribe", description="Task: transcribe, translate, analyze")
+
+class VoiceResponse(BaseModel):
+    transcription: str
+    language: str
+    confidence: float
+    duration: float
+    task: str
+    translation: Optional[str] = None
+
+class VisionRequest(BaseModel):
+    image_data: Optional[str] = Field(None, description="Base64 encoded image data")
+    image_url: Optional[str] = Field(None, description="URL to image")
+    task: str = Field(default="describe", description="Task: describe, ocr, analyze, detect")
+    detail_level: str = Field(default="medium", description="Detail level: low, medium, high")
+
+class VisionResponse(BaseModel):
+    description: str
+    task: str
+    confidence: float
+    detected_objects: List[Dict[str, Any]] = []
+    extracted_text: Optional[str] = None
+    metadata: Dict[str, Any] = {}
+
+class RealTimeSearchRequest(BaseModel):
+    query: str = Field(..., description="Search query")
+    time_range: str = Field(default="24h", description="Time range: 1h, 24h, 7d, 30d")
+    sources: List[str] = Field(default=["news", "social", "web"], description="Real-time sources")
+    location: Optional[str] = Field(None, description="Geographic location filter")
+
+class RealTimeSearchResponse(BaseModel):
+    results: List[SearchResult]
+    trending_topics: List[str] = []
+    sentiment: Optional[str] = None
+    time_range: str
+    location: Optional[str] = None
+
+class AdvancedChatRequest(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+    user_id: str
+    personality: PersonalityType = PersonalityType.ASSISTANT
+    use_search: bool = True
+    use_memory: bool = True
+    use_web_browsing: bool = False
+    use_code_execution: bool = False
+    use_file_analysis: bool = False
+    use_voice: bool = False
+    use_vision: bool = False
+    use_real_time: bool = False
+    model: Optional[str] = None
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    max_tokens: int = Field(default=2000, ge=1, le=8000)
+    stream: bool = Field(default=False)
+    context_files: List[str] = Field(default=[], description="File IDs for context")
+    context_urls: List[str] = Field(default=[], description="URLs for context")
+
+class AdvancedChatResponse(BaseModel):
+    message: str
+    conversation_id: str
+    sources: List[SearchResult] = []
+    reasoning_steps: List[ReasoningStep] = []
+    confidence_score: float
+    response_time: float
+    model_used: str
+    code_executions: List[CodeExecutionResponse] = []
+    web_browsing_results: List[WebBrowsingResponse] = []
+    file_analysis_results: List[FileAnalysisResponse] = []
+    voice_results: List[VoiceResponse] = []
+    vision_results: List[VisionResponse] = []
+    real_time_results: List[RealTimeSearchResponse] = []
+    citations: List[str] = []
+    follow_up_questions: List[str] = []
 
 # Error Models
 class ErrorResponse(BaseModel):
