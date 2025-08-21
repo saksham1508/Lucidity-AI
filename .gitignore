@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+*.log
+
+# FastAPI / Uvicorn
+*.sqlite3
+instance/
+
+# Node
+node_modules/
+*.log
+
+# Build outputs
+build/
+dist/
+coverage/
+
+# Env
+.env
+backend/.env
+frontend/.env
+
+# IDE/editor
+.vscode/
+.idea/
+.DS_Store
+
+# Vite
+frontend/.vite/
+frontend/dist/
+
+# Virtualenvs
+venv/
+.envrc
+
+# Chroma/Vector DBs
+chroma_db/
+backend/chroma_db/
+
+# Pytest
+.pytest_cache/
+
+# Misc
+Thumbs.db
